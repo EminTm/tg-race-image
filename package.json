@@ -1,0 +1,11 @@
+{
+  "name": "tg-race-image",
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "sone": "latest"
+  }
+}

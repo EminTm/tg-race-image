@@ -1,18 +1,31 @@
+import { existsSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { Column, Font, Row, Text, sone } from "sone";
 
 let fontsLoaded = false;
 
 async function ensureFonts() {
   if (fontsLoaded && Font.has("Vazirmatn") && Font.has("VazirmatnBold")) return;
-  const regUrl = "https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/ttf/Vazirmatn-Regular.ttf";
-  const boldUrl = "https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/ttf/Vazirmatn-Bold.ttf";
 
-  const [regRes, boldRes] = await Promise.all([fetch(regUrl), fetch(boldUrl)]);
-  if (!regRes.ok || !boldRes.ok) throw new Error("Font download failed");
+  const regPath = "/tmp/Vazirmatn-Regular.ttf";
+  const boldPath = "/tmp/Vazirmatn-Bold.ttf";
 
-  const [regBuf, boldBuf] = await Promise.all([regRes.arrayBuffer(), boldRes.arrayBuffer()]);
-  if (!Font.has("Vazirmatn")) await Font.load("Vazirmatn", regBuf);
-  if (!Font.has("VazirmatnBold")) await Font.load("VazirmatnBold", boldBuf);
+  if (!existsSync(regPath) || !existsSync(boldPath)) {
+    const regUrl = "https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/ttf/Vazirmatn-Regular.ttf";
+    const boldUrl = "https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/ttf/Vazirmatn-Bold.ttf";
+
+    const [regRes, boldRes] = await Promise.all([fetch(regUrl), fetch(boldUrl)]);
+    if (!regRes.ok || !boldRes.ok) throw new Error("Font download failed");
+
+    const [regBuf, boldBuf] = await Promise.all([regRes.arrayBuffer(), boldRes.arrayBuffer()]);
+    await Promise.all([
+      writeFile(regPath, Buffer.from(regBuf)),
+      writeFile(boldPath, Buffer.from(boldBuf))
+    ]);
+  }
+
+  if (!Font.has("Vazirmatn")) await Font.load("Vazirmatn", regPath);
+  if (!Font.has("VazirmatnBold")) await Font.load("VazirmatnBold", boldPath);
   fontsLoaded = true;
 }
 
@@ -128,4 +141,4 @@ export async function renderRacePng(payload = {}) {
     .borderColor("#C4BE9F");
 
   return sone(doc).png();
-    }
+}
